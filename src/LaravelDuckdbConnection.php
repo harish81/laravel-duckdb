@@ -47,7 +47,7 @@ class LaravelDuckdbConnection extends PostgresConnection
         $countBindings = count($bindings??[]);
         if($countBindings>0){
             foreach ($bindings as $index => $val) {
-                $escapeQuery = Str::replaceFirst('?', is_numeric($val)?$val:"'$val'", $escapeQuery);
+                $escapeQuery = Str::replaceFirst('?', "'$val'", $escapeQuery);
             }
         }
         //disable progressbar on long queries
