@@ -6,15 +6,13 @@ use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
-    private $basePath;
-
-    protected function getPackageBasePath($path){
-        //return $this->basePath.'/'.$path;
-        return '/var/www/harish-duckdb'.'/'.$path;
+    protected function getPackageBasePath($path = null){
+        $base = realpath(__DIR__ . '/..');
+        if(!$path) return $base;
+        return $base.'/'.$path;
     }
     protected function setUp(): void
     {
-        $this->basePath = __DIR__;
         parent::setUp();
     }
 

@@ -10,3 +10,4 @@ phpunit.xml
 psalm.xml
 vendor
 /_test-data/
+/.phpunit.cache/
