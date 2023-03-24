@@ -4,9 +4,10 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/harish81/laravel-duckdb.svg?style=flat-square)](https://packagist.org/packages/harish81/laravel-duckdb)
 
 https://github.com/duckdb/duckdb
-- Download CLI
+- Download CLI (either)
     - https://duckdb.org/docs/installation/
     - https://github.com/duckdb/duckdb/releases/latest
+    - run `php artisan download:duckdb-cli` (Experimental)
 
 ## Support us
 
