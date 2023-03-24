@@ -121,7 +121,7 @@ class LaravelDuckdbConnection extends PostgresConnection
         if (!$process->isSuccessful()) {
             $err = $process->getErrorOutput();
             if(str_starts_with($err, 'Error:')){
-                throw new QueryException($this->getName(), $sql, $bindings, new \Exception($err));
+                throw new QueryException($sql, $bindings, new \Exception($err));
             }
 
             throw new ProcessFailedException($process);
