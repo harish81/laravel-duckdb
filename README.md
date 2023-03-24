@@ -60,6 +60,34 @@ class GenderDataModel extends \HarishDuckDB\LaravelDuckdbModel
 GenderDataModel::where('Gender','M')->first()
 ```
 
+## Advanced Usage
+You can install duckdb extensions too.
+
+### Query data from s3 files directly.
+
+- in `database.php`
+```php
+'connections' => [
+    'my_duckdb' => [
+        'driver' => 'duckdb',
+        'cli_path' => env('DUCKDB_CLI_PATH', base_path('vendor/bin/duckdb')),
+        'cli_timeout' => 0, //0 to disable timeout, default to 4 Minutes (240s)
+        'dbfile' => env('DUCKDB_DB_FILE', storage_path('app/duckdb/duck_main.db')),
+        'pre_queries' => [
+            "SET s3_region='".env('AWS_DEFAULT_REGION')."'",
+            "SET s3_access_key_id='".env('AWS_ACCESS_KEY_ID')."'",
+            "SET s3_secret_access_key='".env('AWS_SECRET_ACCESS_KEY')."'",
+        ],
+        'extensions' => ['httpfs'],
+    ],
+    ...
+```
+
+- Query data
+```php
+DB::connection('my_duckdb')
+  ->select("SELECT * FROM read_csv_auto('s3://my-bucket/test-datasets/example1/us-gender-data-2022.csv') LIMIT 10")
+```
 
 ## Testing
 
