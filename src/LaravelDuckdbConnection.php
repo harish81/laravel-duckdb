@@ -1,0 +1,214 @@
+<?php
+
+namespace Harish\LaravelDuckdb;
+
+use Harish\LaravelDuckdb\Query\Builder;
+use Harish\LaravelDuckdb\Query\Grammar as QueryGrammar;
+use Harish\LaravelDuckdb\Query\Processor;
+use Harish\LaravelDuckdb\Schema\Grammar as SchemaGrammar;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
+use Illuminate\Database\PostgresConnection;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
+
+class LaravelDuckdbConnection extends PostgresConnection
+{
+    private $installed_extensions = [];
+    public function __construct($config)
+    {
+        $this->config = $config;
+        $this->config['dbfile'] = $config['dbfile'];
+        //$this->setDatabaseName($this->config['dbfile']);
+
+        $this->useDefaultPostProcessor();
+        $this->useDefaultSchemaGrammar();
+        $this->useDefaultQueryGrammar();
+
+        $this->ensureDuckdbDirectory();
+        $this->ensureDuckCliExists();
+        $this->installExtensions();
+    }
+
+    public function query()
+    {
+        return $this->getDefaultQueryBuilder();
+    }
+
+    public function table($table, $as = null)
+    {
+        return $this->query()->from($table, $as);
+    }
+
+    private function getDuckDBCommand($query, $bindings = [], $safeMode=false){
+        $escapeQuery = str_replace('"', '\"', $query);
+        $countBindings = count($bindings??[]);
+        if($countBindings>0){
+            foreach ($bindings as $index => $val) {
+                $escapeQuery = Str::replaceFirst('?', is_numeric($val)?$val:"'$val'", $escapeQuery);
+            }
+        }
+        //disable progressbar on long queries
+        $disable_progressbar = "SET enable_progress_bar=false";
+        $preQueries = [$disable_progressbar];
+        foreach ($this->installed_extensions as $extension) {
+            $preQueries[] = "LOAD '$extension'";
+        }
+
+        $preQueries = array_merge($preQueries, $this->config['pre_queries']??[]);
+        $preQueries = '"'.implode('" "', $preQueries).'"';
+        $cmdParams = [
+            $this->config['cli_path'],
+            $this->config['dbfile'],
+        ];
+        if(!$safeMode) $cmdParams[] = $preQueries;
+        $cmdParams = array_merge($cmdParams, [
+            "\"$escapeQuery\"",
+            "-json"
+        ]);
+        return implode(" ", $cmdParams);
+    }
+
+    private function installExtensions(){
+        if(empty($this->config['extensions']??[])) return;
+
+        $cacheKey = $this->config['name'].'_duckdb_extensions';
+        $duckdb_extensions = Cache::rememberForever($cacheKey, function (){
+            return $this->executeDuckCliSql("select * from duckdb_extensions()", [], true);
+        });
+        $sql = [];
+        $tobe_installed_extensions = [];
+        foreach ($this->config['extensions'] as $extension_name) {
+            $ext = collect($duckdb_extensions)->where('extension_name', $extension_name)->first();
+            if($ext){
+                if(!$ext['installed'])
+                    $sql[$extension_name] = "INSTALL '$extension_name'";
+
+                $tobe_installed_extensions[] = $extension_name;
+            }
+        }
+        if(!empty($sql)) Cache::forget($cacheKey);
+        foreach ($sql as $ext_name=>$sExtQuery) {
+            $this->statement($sExtQuery);
+        }
+        $this->installed_extensions=$tobe_installed_extensions;
+    }
+
+    private function ensureDuckCliExists(){
+        if(!file_exists($this->config['cli_path'])){
+            throw new FileNotFoundException("DuckDB CLI Not Found. Make sure DuckDB CLI exists and provide valid `cli_path`. Download CLI From https://duckdb.org/docs/installation/index");
+        }
+    }
+
+    private function ensureDuckdbDirectory(){
+        if(!is_dir(storage_path('app/duckdb'))){
+            if (!mkdir($duckDirectory = storage_path('app/duckdb')) && !is_dir($duckDirectory)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $duckDirectory));
+            }
+        }
+    }
+
+    private function executeDuckCliSql($sql, $bindings = [], $safeMode=false){
+
+        $command = $this->getDuckDBCommand($sql, $bindings, $safeMode);
+        $process = Process::fromShellCommandline($command);
+        $process->setTimeout($this->config['cli_timeout']);
+        $process->setIdleTimeout(0);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            $err = $process->getErrorOutput();
+            if(str_starts_with($err, 'Error:')){
+                throw new QueryException($this->getName(), $sql, $bindings, new \Exception($err));
+            }
+
+            throw new ProcessFailedException($process);
+        }
+
+        $raw_output = trim($process->getOutput());
+        return json_decode($raw_output, true)??[];
+    }
+
+    public function statement($query, $bindings = [])
+    {
+        $start = microtime(true);
+
+        //execute
+        $this->executeDuckCliSql($query, $bindings);
+
+        $this->logQuery(
+            $query, [], $this->getElapsedTime($start)
+        );
+
+        return true;
+    }
+
+    public function select($query, $bindings = [], $useReadPdo = true)
+    {
+        $start = microtime(true);
+
+        //execute
+        $result = $this->executeDuckCliSql($query, $bindings);
+
+        $this->logQuery(
+            $query, [], $this->getElapsedTime($start)
+        );
+
+        return $result;
+    }
+
+    private function getDefaultQueryBuilder(){
+        return new Builder($this, $this->getDefaultQueryGrammar(), $this->getDefaultPostProcessor());
+    }
+
+    public function getDefaultQueryGrammar()
+    {
+        return $this->withTablePrefix(new QueryGrammar);
+    }
+
+    public function useDefaultPostProcessor()
+    {
+        $this->postProcessor = $this->getDefaultPostProcessor();
+    }
+
+    public function getDefaultPostProcessor()
+    {
+        return new Processor();
+    }
+
+    public function useDefaultQueryGrammar()
+    {
+        $this->queryGrammar = $this->getDefaultQueryGrammar();
+    }
+
+    public function getSchemaBuilder()
+    {
+        if (is_null($this->schemaGrammar)) {
+            $this->useDefaultSchemaGrammar();
+        }
+
+        return new \Illuminate\Database\Schema\Builder($this);
+    }
+
+    public function useDefaultSchemaGrammar()
+    {
+        $this->schemaGrammar = $this->getDefaultSchemaGrammar();
+    }
+
+    protected function getDefaultSchemaGrammar()
+    {
+        return new SchemaGrammar;
+    }
+
+    /**
+     * Get the schema grammar used by the connection.
+     *
+     * @return \Illuminate\Database\Schema\Grammars\Grammar
+     */
+    public function getSchemaGrammar()
+    {
+        return $this->schemaGrammar;
+    }
+}
