@@ -48,7 +48,7 @@ DB::connection('my_duckdb')
 
 ```php
 # Using Eloquent Model
-class GenderDataModel extends \HarishDuckDB\LaravelDuckdbModel
+class GenderDataModel extends \Harish\LaravelDuckdb\LaravelDuckdbModel
 {
     protected $connection = 'my_duckdb';
     public function __construct()
