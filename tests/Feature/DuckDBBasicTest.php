@@ -13,7 +13,7 @@ class DuckTestDataModel extends \Harish\LaravelDuckdb\LaravelDuckdbModel
     protected $connection = 'my_duckdb';
     public function __construct()
     {
-        $this->table = '/var/www/harish-duckdb/_test-data/test.csv';
+        $this->table = realpath(__DIR__.'/../../_test-data/test.csv');
     }
 }
 
@@ -39,7 +39,7 @@ class DuckDBBasicTest extends TestCase
 
     public function test_eloquent_model(){
 
-        $rs = DuckTestDataModel::where('VALUE_IN_EUROS',59712)
+        $rs = DuckTestDataModel::where('VALUE','>',59712)
             ->first()->toArray();
         $this->assertNotEmpty($rs);
     }
