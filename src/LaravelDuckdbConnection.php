@@ -98,7 +98,7 @@ class LaravelDuckdbConnection extends PostgresConnection
 
     private function ensureDuckCliExists(){
         if(!file_exists($this->config['cli_path'])){
-            throw new FileNotFoundException("DuckDB CLI Not Found. Make sure DuckDB CLI exists and provide valid `cli_path`. Download CLI From https://duckdb.org/docs/installation/index");
+            throw new FileNotFoundException("DuckDB CLI Not Found. Make sure DuckDB CLI exists and provide valid `cli_path`. Download CLI From https://duckdb.org/docs/installation/index or run `artisan download:duckdb-cli`");
         }
     }
 
@@ -121,7 +121,8 @@ class LaravelDuckdbConnection extends PostgresConnection
         if (!$process->isSuccessful()) {
             $err = $process->getErrorOutput();
             if(str_starts_with($err, 'Error:')){
-                throw new QueryException($this->getName(), $sql, $bindings, new \Exception($err));
+                $finalErr = trim(substr_replace($err, '', 0, strlen('Error:')));
+                throw new QueryException($this->getName(), $sql, $bindings, new \Exception($finalErr));
             }
 
             throw new ProcessFailedException($process);
