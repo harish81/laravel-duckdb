@@ -72,7 +72,7 @@ You can install duckdb extensions too.
     'my_duckdb' => [
         'driver' => 'duckdb',
         'cli_path' => env('DUCKDB_CLI_PATH', base_path('vendor/bin/duckdb')),
-        'cli_timeout' => 0, //0 to disable timeout, default to 4 Minutes (240s)
+        'cli_timeout' => 0, //0 to disable timeout, default to 1 Minute (60s)
         'dbfile' => env('DUCKDB_DB_FILE', storage_path('app/duckdb/duck_main.db')),
         'pre_queries' => [
             "SET s3_region='".env('AWS_DEFAULT_REGION')."'",
