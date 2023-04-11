@@ -92,6 +92,14 @@ DB::connection('my_duckdb')
 
 ## Testing
 
+- Generate test data
+```bash
+# Syntax: ./data-generator.sh <lines> <file-to-save.csv>
+./data-generator.sh 100 _test-data/test.csv
+./data-generator.sh 90000000 _test-data/test_big_file.csv
+```
+
+- Run Test case
 ```bash
 composer test
 ```
