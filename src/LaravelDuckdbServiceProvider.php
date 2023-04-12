@@ -2,7 +2,6 @@
 
 namespace Harish\LaravelDuckdb;
 
-use Harish\LaravelDuckdb\LaravelDuckdbConnection;
 use Harish\LaravelDuckdb\LaravelDuckdbModel as Model;
 use Illuminate\Support\ServiceProvider;
 

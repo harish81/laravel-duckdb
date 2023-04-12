@@ -4,7 +4,6 @@ namespace Harish\LaravelDuckdb\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 
 class DownloadDuckDBCliCommand extends Command
 {

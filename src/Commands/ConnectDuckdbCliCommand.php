@@ -4,7 +4,6 @@ namespace Harish\LaravelDuckdb\Commands;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Console\Command\SignalableCommandInterface;
 
 class ConnectDuckdbCliCommand extends Command
 {

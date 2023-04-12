@@ -2,7 +2,6 @@
 
 namespace Harish\LaravelDuckdb\Tests\Feature;
 
-use Harish\LaravelDuckdb\LaravelDuckdbModel;
 use Harish\LaravelDuckdb\Tests\TestCase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
