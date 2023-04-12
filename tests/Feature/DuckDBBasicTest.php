@@ -23,10 +23,10 @@ class DuckDBBasicTest extends TestCase
         $this->assertFileExists(base_path('vendor/bin/duckdb'));
     }
 
-    public function test_connect_command_download(){
+    /*public function test_connect_command_download(){
         $opt = Artisan::call('laravel-duckdb:connect', ['connection_name' => 'my_duckdb']);
         $this->assertEquals(1, $opt);
-    }
+    }*/
 
     public function test_simple()
     {

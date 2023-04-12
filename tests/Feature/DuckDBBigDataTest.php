@@ -22,7 +22,7 @@ class DuckDBBigDataTest extends TestCase
         foreach ($distinct_foo_codes as $foo_code) {
             $final_foo_tbl[] = [
                 'CODE' => $foo_code,
-                'COUNTRY' => str_replace("'", "''", $countries[array_rand($countries)]),
+                'COUNTRY' => $countries[array_rand($countries)],
             ];
         }
 
