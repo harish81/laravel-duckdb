@@ -42,14 +42,28 @@ class LaravelDuckdbConnection extends PostgresConnection
         return $this->query()->from($table, $as);
     }
 
+    private function quote($str)
+    {
+        if(extension_loaded('sqlite3')){
+            return "'".\SQLite3::escapeString($str)."'";
+        }
+        if(extension_loaded('pdo_sqlite')){
+            return (new \PDO('sqlite::memory:'))->quote($str);
+        }
+
+        return "'".preg_replace("/'/m", "''", $str)."'";
+    }
+
     private function getDuckDBCommand($query, $bindings = [], $safeMode=false){
-        $escapeQuery = str_replace('"', '\"', $query);
+        $escapeQuery = $query;
         $countBindings = count($bindings??[]);
         if($countBindings>0){
             foreach ($bindings as $index => $val) {
-                $escapeQuery = Str::replaceFirst('?', "'$val'", $escapeQuery);
+                $escapeQuery = Str::replaceFirst('?', $this->quote($val), $escapeQuery);
             }
         }
+        $escapeQuery = str_replace('"', '\"', $escapeQuery);
+
         //disable progressbar on long queries
         $disable_progressbar = "SET enable_progress_bar=false";
         $preQueries = [$disable_progressbar];
@@ -190,7 +204,7 @@ class LaravelDuckdbConnection extends PostgresConnection
             $this->useDefaultSchemaGrammar();
         }
 
-        return new \Illuminate\Database\Schema\Builder($this);
+        return new \Harish\LaravelDuckdb\Schema\Builder($this);
     }
 
     public function useDefaultSchemaGrammar()
