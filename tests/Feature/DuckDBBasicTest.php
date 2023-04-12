@@ -34,6 +34,13 @@ class DuckDBBasicTest extends TestCase
         $this->assertArrayHasKey(1, $rs);
     }
 
+    public function test_binding_escape_str(){
+        $str = "Co'mpl''ex` \"st'\"ring \\0 \\n \\r \\t `myworld`";
+        $rs = DB::connection('my_duckdb')->selectOne('select ? as one', [$str]);
+
+        $this->assertEquals($str, $rs['one']);
+    }
+
     public function test_read_csv(){
         $rs = DB::connection('my_duckdb')
             ->table($this->getPackageBasePath('_test-data/test.csv'))

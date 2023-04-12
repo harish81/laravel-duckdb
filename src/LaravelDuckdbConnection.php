@@ -62,7 +62,6 @@ class LaravelDuckdbConnection extends PostgresConnection
                 $escapeQuery = Str::replaceFirst('?', $this->quote($val), $escapeQuery);
             }
         }
-        $escapeQuery = str_replace('"', '\"', $escapeQuery);
 
         //disable progressbar on long queries
         $disable_progressbar = "SET enable_progress_bar=false";
@@ -72,17 +71,16 @@ class LaravelDuckdbConnection extends PostgresConnection
         }
 
         $preQueries = array_merge($preQueries, $this->config['pre_queries']??[]);
-        $preQueries = '"'.implode('" "', $preQueries).'"';
         $cmdParams = [
             $this->config['cli_path'],
             $this->config['dbfile'],
         ];
-        if(!$safeMode) $cmdParams[] = $preQueries;
+        if(!$safeMode) $cmdParams = array_merge($cmdParams, $preQueries);
         $cmdParams = array_merge($cmdParams, [
-            "\"$escapeQuery\"",
+            "$escapeQuery",
             "-json"
         ]);
-        return implode(" ", $cmdParams);
+        return $cmdParams;
     }
 
     private function installExtensions(){
@@ -127,7 +125,8 @@ class LaravelDuckdbConnection extends PostgresConnection
     private function executeDuckCliSql($sql, $bindings = [], $safeMode=false){
 
         $command = $this->getDuckDBCommand($sql, $bindings, $safeMode);
-        $process = Process::fromShellCommandline($command);
+        //$process = Process::fromShellCommandline($command);
+        $process = new Process($command);
         $process->setTimeout($this->config['cli_timeout']);
         $process->setIdleTimeout(0);
         $process->run();
