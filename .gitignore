@@ -11,3 +11,4 @@ psalm.xml
 vendor
 /_test-data/
 /.phpunit.cache/
+.DS_Store

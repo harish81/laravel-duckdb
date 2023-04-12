@@ -42,14 +42,27 @@ class LaravelDuckdbConnection extends PostgresConnection
         return $this->query()->from($table, $as);
     }
 
+    private function quote($str)
+    {
+        if(extension_loaded('sqlite3')){
+            return "'".\SQLite3::escapeString($str)."'";
+        }
+        if(extension_loaded('pdo_sqlite')){
+            return (new \PDO('sqlite::memory:'))->quote($str);
+        }
+
+        return "'".preg_replace("/'/m", "''", $str)."'";
+    }
+
     private function getDuckDBCommand($query, $bindings = [], $safeMode=false){
-        $escapeQuery = str_replace('"', '\"', $query);
+        $escapeQuery = $query;
         $countBindings = count($bindings??[]);
         if($countBindings>0){
             foreach ($bindings as $index => $val) {
-                $escapeQuery = Str::replaceFirst('?', "'$val'", $escapeQuery);
+                $escapeQuery = Str::replaceFirst('?', $this->quote($val), $escapeQuery);
             }
         }
+
         //disable progressbar on long queries
         $disable_progressbar = "SET enable_progress_bar=false";
         $preQueries = [$disable_progressbar];
@@ -58,17 +71,16 @@ class LaravelDuckdbConnection extends PostgresConnection
         }
 
         $preQueries = array_merge($preQueries, $this->config['pre_queries']??[]);
-        $preQueries = '"'.implode('" "', $preQueries).'"';
         $cmdParams = [
             $this->config['cli_path'],
             $this->config['dbfile'],
         ];
-        if(!$safeMode) $cmdParams[] = $preQueries;
+        if(!$safeMode) $cmdParams = array_merge($cmdParams, $preQueries);
         $cmdParams = array_merge($cmdParams, [
-            "\"$escapeQuery\"",
+            "$escapeQuery",
             "-json"
         ]);
-        return implode(" ", $cmdParams);
+        return $cmdParams;
     }
 
     private function installExtensions(){
@@ -98,7 +110,7 @@ class LaravelDuckdbConnection extends PostgresConnection
 
     private function ensureDuckCliExists(){
         if(!file_exists($this->config['cli_path'])){
-            throw new FileNotFoundException("DuckDB CLI Not Found. Make sure DuckDB CLI exists and provide valid `cli_path`. Download CLI From https://duckdb.org/docs/installation/index");
+            throw new FileNotFoundException("DuckDB CLI Not Found. Make sure DuckDB CLI exists and provide valid `cli_path`. Download CLI From https://duckdb.org/docs/installation/index or run `artisan laravel-duckdb:download-cli`");
         }
     }
 
@@ -113,7 +125,8 @@ class LaravelDuckdbConnection extends PostgresConnection
     private function executeDuckCliSql($sql, $bindings = [], $safeMode=false){
 
         $command = $this->getDuckDBCommand($sql, $bindings, $safeMode);
-        $process = Process::fromShellCommandline($command);
+        //$process = Process::fromShellCommandline($command);
+        $process = new Process($command);
         $process->setTimeout($this->config['cli_timeout']);
         $process->setIdleTimeout(0);
         $process->run();
@@ -121,7 +134,8 @@ class LaravelDuckdbConnection extends PostgresConnection
         if (!$process->isSuccessful()) {
             $err = $process->getErrorOutput();
             if(str_starts_with($err, 'Error:')){
-                throw new QueryException($sql, $bindings, new \Exception($err));
+                $finalErr = trim(substr_replace($err, '', 0, strlen('Error:')));
+                throw new QueryException($sql, $bindings, new \Exception($finalErr));
             }
 
             throw new ProcessFailedException($process);
@@ -189,7 +203,7 @@ class LaravelDuckdbConnection extends PostgresConnection
             $this->useDefaultSchemaGrammar();
         }
 
-        return new \Illuminate\Database\Schema\Builder($this);
+        return new \Harish\LaravelDuckdb\Schema\Builder($this);
     }
 
     public function useDefaultSchemaGrammar()

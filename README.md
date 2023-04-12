@@ -7,7 +7,7 @@ https://github.com/duckdb/duckdb
 - Download CLI (either)
     - https://duckdb.org/docs/installation/
     - https://github.com/duckdb/duckdb/releases/latest
-    - run `php artisan download:duckdb-cli` (Experimental)
+    - run `php artisan laravel-duckdb:download-cli` (Experimental)
 
 ## Support us
 
@@ -72,7 +72,7 @@ You can install duckdb extensions too.
     'my_duckdb' => [
         'driver' => 'duckdb',
         'cli_path' => env('DUCKDB_CLI_PATH', base_path('vendor/bin/duckdb')),
-        'cli_timeout' => 0, //0 to disable timeout, default to 4 Minutes (240s)
+        'cli_timeout' => 0, //0 to disable timeout, default to 1 Minute (60s)
         'dbfile' => env('DUCKDB_DB_FILE', storage_path('app/duckdb/duck_main.db')),
         'pre_queries' => [
             "SET s3_region='".env('AWS_DEFAULT_REGION')."'",
@@ -92,6 +92,14 @@ DB::connection('my_duckdb')
 
 ## Testing
 
+- Generate test data
+```bash
+# Syntax: ./data-generator.sh <lines> <file-to-save.csv>
+./data-generator.sh 100 _test-data/test.csv
+./data-generator.sh 90000000 _test-data/test_big_file.csv
+```
+
+- Run Test case
 ```bash
 composer test
 ```

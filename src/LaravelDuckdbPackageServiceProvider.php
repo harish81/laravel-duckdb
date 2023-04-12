@@ -2,6 +2,7 @@
 
 namespace Harish\LaravelDuckdb;
 
+use Harish\LaravelDuckdb\Commands\ConnectDuckdbCliCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Harish\LaravelDuckdb\Commands\DownloadDuckDBCliCommand;
@@ -17,6 +18,7 @@ class LaravelDuckdbPackageServiceProvider extends PackageServiceProvider
          */
         $package
             ->name('laravel-duckdb')
-            ->hasCommand(DownloadDuckDBCliCommand::class);
+            ->hasCommand(DownloadDuckDBCliCommand::class)
+            ->hasCommand(ConnectDuckdbCliCommand::class);
     }
 }
