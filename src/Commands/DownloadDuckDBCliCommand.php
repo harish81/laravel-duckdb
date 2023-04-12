@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class DownloadDuckDBCliCommand extends Command
 {
-    protected $signature = 'download:duckdb-cli';
+    protected $signature = 'laravel-duckdb:download-cli';
 
     protected $description = 'Download DuckDB Cli';
 

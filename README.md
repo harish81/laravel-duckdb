@@ -7,7 +7,7 @@ https://github.com/duckdb/duckdb
 - Download CLI (either)
     - https://duckdb.org/docs/installation/
     - https://github.com/duckdb/duckdb/releases/latest
-    - run `php artisan download:duckdb-cli` (Experimental)
+    - run `php artisan laravel-duckdb:download-cli` (Experimental)
 
 ## Support us
 
