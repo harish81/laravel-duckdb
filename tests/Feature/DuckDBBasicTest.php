@@ -3,6 +3,7 @@
 namespace Harish\LaravelDuckdb\Tests\Feature;
 
 use Harish\LaravelDuckdb\Tests\TestCase;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
@@ -54,5 +55,11 @@ class DuckDBBasicTest extends TestCase
         $rs = DuckTestDataModel::where('VALUE','>',59712)
             ->first()->toArray();
         $this->assertNotEmpty($rs);
+    }
+
+    public function test_query_exception(){
+        $this->expectException(QueryException::class);
+        $rs = DB::connection('my_duckdb')->selectOne('select * from non_existing_tbl01 where foo=1 limit 1');
+        dd($rs);
     }
 }
