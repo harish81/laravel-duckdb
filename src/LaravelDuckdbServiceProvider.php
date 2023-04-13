@@ -13,6 +13,7 @@ class LaravelDuckdbServiceProvider extends ServiceProvider
             'cli_path' => base_path('vendor/bin/duckdb'),
             'cli_timeout' => 60,
             'dbfile' => storage_path('app/duckdb/duck_main.db'),
+            'read_only' => false,
             'pre_queries' => [],
             'extensions' => []
         ];

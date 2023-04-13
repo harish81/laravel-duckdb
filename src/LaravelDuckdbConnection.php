@@ -75,6 +75,7 @@ class LaravelDuckdbConnection extends PostgresConnection
             $this->config['cli_path'],
             $this->config['dbfile'],
         ];
+        if($this->config['read_only']) array_splice($cmdParams, 1, 0, '--readonly');
         if(!$safeMode) $cmdParams = array_merge($cmdParams, $preQueries);
         $cmdParams = array_merge($cmdParams, [
             "$escapeQuery",
@@ -103,7 +104,7 @@ class LaravelDuckdbConnection extends PostgresConnection
         }
         if(!empty($sql)) Cache::forget($cacheKey);
         foreach ($sql as $ext_name=>$sExtQuery) {
-            $this->statement($sExtQuery);
+            $this->executeDuckCliSql($sExtQuery, [], true);
         }
         $this->installed_extensions=$tobe_installed_extensions;
     }
