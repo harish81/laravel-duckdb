@@ -19,9 +19,9 @@ class LaravelDuckdbConnection extends PostgresConnection
     private $installed_extensions = [];
     public function __construct($config)
     {
+        $this->database = $config['dbfile'];
         $this->config = $config;
         $this->config['dbfile'] = $config['dbfile'];
-        //$this->setDatabaseName($this->config['dbfile']);
 
         $this->useDefaultPostProcessor();
         $this->useDefaultSchemaGrammar();
@@ -126,7 +126,6 @@ class LaravelDuckdbConnection extends PostgresConnection
     private function executeDuckCliSql($sql, $bindings = [], $safeMode=false){
 
         $command = $this->getDuckDBCommand($sql, $bindings, $safeMode);
-        //$process = Process::fromShellCommandline($command);
         $process = new Process($command);
         $process->setTimeout($this->config['cli_timeout']);
         $process->setIdleTimeout(0);
