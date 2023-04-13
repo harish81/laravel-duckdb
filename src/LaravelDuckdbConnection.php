@@ -145,22 +145,7 @@ class LaravelDuckdbConnection extends PostgresConnection
         return json_decode($raw_output, true)??[];
     }
 
-    public function statement($query, $bindings = [])
-    {
-        $start = microtime(true);
-
-        //execute
-        $this->executeDuckCliSql($query, $bindings);
-
-        $this->logQuery(
-            $query, [], $this->getElapsedTime($start)
-        );
-
-        return true;
-    }
-
-    public function select($query, $bindings = [], $useReadPdo = true)
-    {
+    private function runQueryWithLog($query, $bindings=[]){
         $start = microtime(true);
 
         //execute
@@ -171,6 +156,25 @@ class LaravelDuckdbConnection extends PostgresConnection
         );
 
         return $result;
+    }
+
+    public function statement($query, $bindings = [])
+    {
+        $this->runQueryWithLog($query, $bindings);
+
+        return true;
+    }
+
+    public function select($query, $bindings = [], $useReadPdo = true)
+    {
+        return $this->runQueryWithLog($query, $bindings);
+    }
+
+    public function affectingStatement($query, $bindings = [])
+    {
+        //for update/delete
+        //todo: we have to use : returning * to get list of affected rows; currently causing error;
+        return $this->runQueryWithLog($query, $bindings);
     }
 
     private function getDefaultQueryBuilder(){
