@@ -19,7 +19,7 @@ class LaravelDuckdbConnection extends PostgresConnection
     private $installed_extensions = [];
     public function __construct($config)
     {
-        $this->database = $config['dbfile'];
+        $this->database = $config['database'];
         $this->config = $config;
         $this->config['dbfile'] = $config['dbfile'];
 

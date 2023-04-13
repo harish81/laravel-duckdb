@@ -60,6 +60,5 @@ class DuckDBBasicTest extends TestCase
     public function test_query_exception(){
         $this->expectException(QueryException::class);
         $rs = DB::connection('my_duckdb')->selectOne('select * from non_existing_tbl01 where foo=1 limit 1');
-        dd($rs);
     }
 }
