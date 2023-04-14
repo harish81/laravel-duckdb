@@ -89,6 +89,51 @@ You can install duckdb extensions too.
 DB::connection('my_duckdb')
   ->select("SELECT * FROM read_csv_auto('s3://my-bucket/test-datasets/example1/us-gender-data-2022.csv') LIMIT 10")
 ```
+### Writing a migration
+```php
+return new class extends Migration {
+    protected $connection = 'my_duckdb';
+    public function up(): void
+    {
+        DB::connection('my_duckdb')->statement('CREATE SEQUENCE people_sequence');
+        Schema::create('people', function (Blueprint $table) {
+            $table->id()->default(new \Illuminate\Database\Query\Expression("nextval('people_sequence')"));
+            $table->string('name');
+            $table->integer('age');
+            $table->integer('rank');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('people');
+        DB::connection('my_duckdb')->statement('DROP SEQUENCE people_sequence');
+    }
+};
+```
+
+### Readonly Connection - A solution to concurrent query.
+- in `database.php`
+```php
+    'connections' => [
+        'my_duckdb' => [
+            'driver' => 'duckdb',
+            'cli_path' => env('DUCKDB_CLI_PATH', base_path('vendor/bin/duckdb')),
+            'cli_timeout' => 0,
+            'dbfile' => env('DUCKDB_DB_FILE', storage_path('app/duckdb/duck_main.db')),
+            'schema' => 'main',
+            'read_only' => true,
+            'pre_queries' => [
+                "SET s3_region='".env('AWS_DEFAULT_REGION')."'",
+                "SET s3_access_key_id='".env('AWS_ACCESS_KEY_ID')."'",
+                "SET s3_secret_access_key='".env('AWS_SECRET_ACCESS_KEY')."'",
+            ],
+            'extensions' => ['httpfs', 'postgres_scanner'],
+        ],
+        ...
+```
+
 
 ## Testing
 
@@ -103,6 +148,10 @@ DB::connection('my_duckdb')
 ```bash
 composer test
 ```
+
+## Limitations & FAQ
+
+-  https://duckdb.org/faq
 
 ## Changelog
 
