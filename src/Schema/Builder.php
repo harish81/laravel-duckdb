@@ -2,6 +2,7 @@
 
 namespace Harish\LaravelDuckdb\Schema;
 
+use Closure;
 use Illuminate\Support\Facades\File;
 
 class Builder extends \Illuminate\Database\Schema\PostgresBuilder
@@ -17,5 +18,13 @@ class Builder extends \Illuminate\Database\Schema\PostgresBuilder
         return File::exists($name)
             ? File::delete($name)
             : true;
+    }
+
+    protected function createBlueprint($table, Closure $callback = null)
+    {
+        $this->blueprintResolver(function ($table, $callback, $prefix) {
+            return new Blueprint($table, $callback, $prefix);
+        });
+        return parent::createBlueprint($table, $callback);
     }
 }
