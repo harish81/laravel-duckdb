@@ -34,5 +34,8 @@ class TestCase extends Orchestra
             'cli_timeout' => 0,
             'dbfile' => '/tmp/duck_main.db',
         ]);
+
+        //default database just for schema testing, no need for production
+        $app['config']->set('database.default', 'my_duckdb');
     }
 }

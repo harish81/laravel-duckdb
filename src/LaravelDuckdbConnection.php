@@ -19,9 +19,9 @@ class LaravelDuckdbConnection extends PostgresConnection
     private $installed_extensions = [];
     public function __construct($config)
     {
+        $this->database = $config['database'];
         $this->config = $config;
         $this->config['dbfile'] = $config['dbfile'];
-        //$this->setDatabaseName($this->config['dbfile']);
 
         $this->useDefaultPostProcessor();
         $this->useDefaultSchemaGrammar();
@@ -75,6 +75,7 @@ class LaravelDuckdbConnection extends PostgresConnection
             $this->config['cli_path'],
             $this->config['dbfile'],
         ];
+        if($this->config['read_only']) array_splice($cmdParams, 1, 0, '--readonly');
         if(!$safeMode) $cmdParams = array_merge($cmdParams, $preQueries);
         $cmdParams = array_merge($cmdParams, [
             "$escapeQuery",
@@ -103,7 +104,7 @@ class LaravelDuckdbConnection extends PostgresConnection
         }
         if(!empty($sql)) Cache::forget($cacheKey);
         foreach ($sql as $ext_name=>$sExtQuery) {
-            $this->statement($sExtQuery);
+            $this->executeDuckCliSql($sExtQuery, [], true);
         }
         $this->installed_extensions=$tobe_installed_extensions;
     }
@@ -125,7 +126,6 @@ class LaravelDuckdbConnection extends PostgresConnection
     private function executeDuckCliSql($sql, $bindings = [], $safeMode=false){
 
         $command = $this->getDuckDBCommand($sql, $bindings, $safeMode);
-        //$process = Process::fromShellCommandline($command);
         $process = new Process($command);
         $process->setTimeout($this->config['cli_timeout']);
         $process->setIdleTimeout(0);
@@ -145,22 +145,7 @@ class LaravelDuckdbConnection extends PostgresConnection
         return json_decode($raw_output, true)??[];
     }
 
-    public function statement($query, $bindings = [])
-    {
-        $start = microtime(true);
-
-        //execute
-        $this->executeDuckCliSql($query, $bindings);
-
-        $this->logQuery(
-            $query, [], $this->getElapsedTime($start)
-        );
-
-        return true;
-    }
-
-    public function select($query, $bindings = [], $useReadPdo = true)
-    {
+    private function runQueryWithLog($query, $bindings=[]){
         $start = microtime(true);
 
         //execute
@@ -171,6 +156,25 @@ class LaravelDuckdbConnection extends PostgresConnection
         );
 
         return $result;
+    }
+
+    public function statement($query, $bindings = [])
+    {
+        $this->runQueryWithLog($query, $bindings);
+
+        return true;
+    }
+
+    public function select($query, $bindings = [], $useReadPdo = true)
+    {
+        return $this->runQueryWithLog($query, $bindings);
+    }
+
+    public function affectingStatement($query, $bindings = [])
+    {
+        //for update/delete
+        //todo: we have to use : returning * to get list of affected rows; currently causing error;
+        return $this->runQueryWithLog($query, $bindings);
     }
 
     private function getDefaultQueryBuilder(){

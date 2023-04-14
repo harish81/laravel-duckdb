@@ -30,4 +30,9 @@ class Grammar extends PostgresGrammar
         }
         return  ($prefixAlias?$this->tablePrefix:'').$value;
     }
+
+    public function compileTruncate(Builder $query)
+    {
+        return ['truncate '.$this->wrapTable($query->from) => []];
+    }
 }
