@@ -19,6 +19,12 @@ class DuckTestDataModel extends \Harish\LaravelDuckdb\LaravelDuckdbModel
 
 class DuckDBBasicTest extends TestCase
 {
+    public function test_cli_download_specific_version()
+    {
+        Artisan::call('laravel-duckdb:download-cli --ver=0.7.1');
+        $this->assertFileExists(base_path('vendor/bin/duckdb'));
+    }
+
     public function test_cli_download(){
         Artisan::call('laravel-duckdb:download-cli');
         $this->assertFileExists(base_path('vendor/bin/duckdb'));

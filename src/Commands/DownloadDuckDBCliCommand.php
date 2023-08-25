@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 
 class DownloadDuckDBCliCommand extends Command
 {
-    protected $signature = 'laravel-duckdb:download-cli';
+    protected $signature = 'laravel-duckdb:download-cli {--ver=}';
 
     protected $description = 'Download DuckDB Cli';
 
@@ -16,25 +16,31 @@ class DownloadDuckDBCliCommand extends Command
         $os = strtolower(php_uname('s'));
         $arch = strtolower(php_uname('m'));
 
+        $version = $this->option('ver');
+
         $this->info("OS: $os, Architecture: $arch");
         $this->newLine();
 
         if(in_array($os, ['linux'])){ //linux
             if(in_array($arch, ['x86_64', 'amd64'])){
-                $this->downloadCli('linux', 'amd64');
+                $this->downloadCli('linux', 'amd64', $version);
             }else{
-                $this->downloadCli('linux', $arch);
+                $this->downloadCli('linux', $arch, $version);
             }
         } elseif (in_array($os, ['darwin'])){
-            $this->downloadCli('osx', 'universal');
+            $this->downloadCli('osx', 'universal', $version);
         }else{
             throw new \Exception('Not Supported! Currently Only linux, mac supported. Try manually downloading cli from: https://duckdb.org/docs/installation/');
             return;
         }
     }
 
-    private function downloadCli($os, $arch){
+    private function downloadCli($os, $arch, $version = null){
         $duck_base_url = "https://github.com/duckdb/duckdb/releases/latest/download/duckdb_cli-__OS__-__PLATEFORM__.zip";
+
+        if ($version) {
+            $duck_base_url = "https://github.com/duckdb/duckdb/releases/download/v$version/duckdb_cli-__OS__-__PLATEFORM__.zip";
+        }
 
         $url = str_replace(array('__OS__', '__PLATEFORM__'), array($os, $arch), $duck_base_url);
 
