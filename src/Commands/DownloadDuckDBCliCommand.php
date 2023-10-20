@@ -37,10 +37,13 @@ class DownloadDuckDBCliCommand extends Command
 
     private function downloadCli($os, $arch, $version = null){
 
-        $version = $version?'v'.$version:'latest';
-        $duck_base_url = "https://github.com/duckdb/duckdb/releases/download/__VERSION__/duckdb_cli-__OS__-__PLATEFORM__.zip";
+        $duck_base_url = "https://github.com/duckdb/duckdb/releases/latest/download/duckdb_cli-__OS__-__PLATEFORM__.zip";
 
-        $url = str_replace(array('__OS__', '__PLATEFORM__', '__VERSION__'), array($os, $arch, $version), $duck_base_url);
+        if ($version) {
+            $duck_base_url = "https://github.com/duckdb/duckdb/releases/download/v$version/duckdb_cli-__OS__-__PLATEFORM__.zip";
+        }
+
+        $url = str_replace(array('__OS__', '__PLATEFORM__'), array($os, $arch), $duck_base_url);
 
         $this->info("Downloading cli($url)...");
         $this->newLine();
