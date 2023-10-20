@@ -6,6 +6,7 @@ use Harish\LaravelDuckdb\Tests\TestCase;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Process\Process;
 
 //Test model
 class DuckTestDataModel extends \Harish\LaravelDuckdb\LaravelDuckdbModel
@@ -21,8 +22,12 @@ class DuckDBBasicTest extends TestCase
 {
     public function test_cli_download_specific_version()
     {
-        Artisan::call('laravel-duckdb:download-cli --ver=0.7.1');
-        $this->assertFileExists(base_path('vendor/bin/duckdb'));
+        $version = '0.7.1';
+        Artisan::call('laravel-duckdb:download-cli --ver='.$version);
+        $process = Process::fromShellCommandline(base_path('vendor/bin/duckdb').' --version');
+        $process->run();
+
+        $this->assertTrue(str_contains($process->getOutput(), $version));
     }
 
     public function test_cli_download(){
